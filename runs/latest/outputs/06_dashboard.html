@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>독일 신용 대출 분석 대시보드</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bd:  rgba(110,93,80,0.16);
+      --bds: rgba(96,79,67,0.24);
+      --offwhite: rgba(247,244,239,0.97);
+      --acc: #4fb799;
+      --dk:  #2f2b27;
+      --mu:  #766c63;
+      --so:  #9a9086;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #000; color: #fff; padding: 36px 40px 80px; }
+
+    .method-section { background: rgba(14,12,10,.6); border: 1px solid var(--bds); border-radius: 22px; padding: 28px; margin-bottom: 28px; }
+    .method-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--acc); margin-bottom: 18px; }
+    .method-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .method-btn { border-radius: 16px; border: 1px solid rgba(255,255,255,.1); padding: 18px 16px; cursor: pointer; transition: transform .2s, border-color .2s, background .2s; text-align: left; background: rgba(255,255,255,.04); }
+    .method-btn:hover { border-color: rgba(79,183,153,.3); background: rgba(79,183,153,.07); transform: translateY(-2px); }
+    .method-btn.active { border-color: var(--acc); background: rgba(79,183,153,.1); }
+    .mb-icon  { font-size: 24px; margin-bottom: 10px; }
+    .mb-num   { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: rgba(255,255,255,.35); margin-bottom: 5px; letter-spacing: .08em; }
+    .mb-title { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.85); margin-bottom: 6px; line-height: 1.35; }
+    .mb-desc  { font-size: 11px; color: rgba(255,255,255,.45); line-height: 1.55; }
+    .mb-tag   { display: inline-block; padding: 2px 7px; background: rgba(79,183,153,.12); border-radius: 5px; font-size: 10px; color: var(--acc); font-weight: 600; margin-top: 8px; }
+
+    .dash-panel { display: none; }
+    .dash-panel.active { display: block; }
+    .dash { background: rgba(250,246,240,.97); border-radius: 20px; border: 1px solid var(--bds); overflow: hidden; box-shadow: 0 16px 48px rgba(42,30,18,.12); }
+
+    .dash-topbar { background: #000; padding: 20px 26px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+    .dash-topbar-left { flex: 1; }
+    .dash-topbar-title { font-family: 'Barlow', sans-serif; font-size: 24px; font-weight: 600; color: #fff; letter-spacing: -.02em; line-height: 1.25; }
+    .dash-topbar-title em { font-family: 'Instrument Serif', serif; font-style: italic; color: rgba(255,255,255,.65); font-weight: 400; }
+    .dash-topbar-problem { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(255,255,255,.38); margin-top: 5px; letter-spacing: .03em; }
+    .dash-topbar-meta { font-size: 11px; color: rgba(255,255,255,.35); white-space: nowrap; flex-shrink: 0; }
+
+    .dash-body { padding: 22px; }
+
+    .story-block { border-bottom: 1px solid rgba(96,79,67,.12); padding: 0 0 18px; margin-bottom: 20px; }
+    .story-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+    .sf-cell { padding: 12px 14px; position: relative; }
+    .sf-cell + .sf-cell::before { content: '→'; position: absolute; left: -7px; top: 50%; transform: translateY(-50%); font-size: 12px; color: rgba(96,79,67,.3); font-family: 'JetBrains Mono', monospace; }
+    .sf-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; padding: 2px 7px; border-radius: 5px; display: inline-block; }
+    .lbl-now { background: rgba(47,43,39,.07); color: rgba(47,43,39,.5); }
+    .lbl-why { background: rgba(239,176,93,.15); color: #8a5c00; }
+    .lbl-so  { background: rgba(239,125,134,.13); color: #7a2430; }
+    .lbl-act { background: rgba(53,201,149,.14); color: #1a6b50; }
+    .sf-val  { font-family: 'Barlow', sans-serif; font-size: 16px; font-weight: 700; color: var(--dk); line-height: 1.3; margin-bottom: 4px; }
+    .sf-desc { font-size: 12px; color: rgba(47,43,39,.55); line-height: 1.65; }
+    .sf-desc strong { color: var(--dk); font-weight: 700; }
+    .num-red { color: #9b2d38; font-weight: 700; }
+    .num-grn { color: #1a6b50; font-weight: 700; }
+    .num-yel { color: #8a5c00; font-weight: 700; }
+
+    .dash-step-hdr { display: flex; align-items: center; gap: 10px; margin: 22px 0 10px; }
+    .dash-step-hdr:first-child { margin-top: 0; }
+    .dash-step-hdr-num { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #fff; background: rgba(47,43,39,.7); padding: 3px 9px; border-radius: 6px; white-space: nowrap; }
+    .dash-step-hdr-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: rgba(47,43,39,.55); white-space: nowrap; }
+    .dash-step-hdr::after { content: ''; flex: 1; height: 1px; background: rgba(96,79,67,.12); }
+
+    .dash-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .dk-box { background: #fff; border: 1px solid rgba(96,79,67,.1); border-radius: 14px; padding: 16px; }
+    .dk-val { font-family: 'Barlow', sans-serif; font-size: 26px; font-weight: 600; color: #0a0a0a; margin-bottom: 4px; }
+    .dk-lbl { font-size: 11px; color: var(--mu); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 7px; }
+    .dk-delta { font-size: 12px; font-weight: 600; }
+    .dk-delta.up   { color: #218d72; }
+    .dk-delta.dn   { color: #9b2d38; }
+    .dk-delta.warn { color: #a0620a; }
+
+    .dash-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; min-width: 0; align-items: stretch; }
+    .dash-charts > * { min-width: 0; overflow: hidden; }
+    .dash-charts.three-eq { grid-template-columns: 1fr 1fr 1fr; }
+    .dash-charts.asym { grid-template-columns: 1.5fr 1fr; }
+    .dash-charts.full { grid-template-columns: 1fr; }
+    .chart-card { background: #fff; border: 1px solid rgba(96,79,67,.1); border-radius: 14px; padding: 20px; overflow: hidden; min-width: 0; display: flex; flex-direction: column; }
+    .chart-card.primary { background: #fff; border: 1px solid rgba(96,79,67,.15); box-shadow: 0 4px 16px rgba(42,30,18,.08); }
+    .chart-card.muted { opacity: 0.75; }
+    .dash-charts:not(.full) .chart-card { min-height: 240px; }
+    .dash-charts.full .chart-card { min-height: 200px; max-height: none; }
+    .chart-card svg { display: block; width: 100%; height: auto; max-width: 100%; margin-top: 8px; overflow: visible; }
+    .cc-title { font-size: 13px; font-weight: 700; color: var(--dk); margin-bottom: 5px; line-height: 1.45; }
+    .cc-desc  { font-size: 12px; color: var(--mu); margin-bottom: 0; line-height: 1.65; }
+
+    .dash-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .da-item  { background: rgba(247,244,239,.97); border: 1px solid rgba(96,79,67,.12); border-radius: 12px; padding: 13px 14px; }
+    .da-p     { font-size: 10px; font-weight: 700; color: rgba(47,43,39,.45); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+    .da-title { font-size: 13px; font-weight: 700; color: var(--dk); margin-bottom: 5px; line-height: 1.45; }
+    .da-why   { font-size: 12px; color: rgba(47,43,39,.55); line-height: 1.65; }
+
+    .sim-widget { background: rgba(247,241,226,.7); border: 1px solid rgba(239,176,93,.3); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
+    .sim-title  { font-size: 12px; font-weight: 700; color: var(--dk); margin-bottom: 8px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; line-height: 1.5; }
+    .sim-badge  { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 5px; background: rgba(239,176,93,.2); color: #8a5c00; border: 1px solid rgba(239,176,93,.3); white-space: nowrap; }
+    .sim-note   { font-size: 12px; color: var(--mu); line-height: 1.65; margin-bottom: 12px; }
+    .sim-scenario-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .sim-scenario-btn { flex: 1; padding: 10px 6px; border-radius: 12px; border: 1px solid rgba(96,79,67,.15); font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; background: rgba(47,43,39,.05); color: var(--dk); text-align: center; line-height: 1.5; font-family: 'Inter', sans-serif; }
+    .sim-scenario-btn:hover { border-color: rgba(96,79,67,.28); transform: translateY(-2px); }
+    .sim-scenario-btn.active { background: rgba(79,183,153,.14); border-color: rgba(79,183,153,.4); color: #218d72; }
+    .sim-results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .sim-res     { background: #fff; border: 1px solid rgba(96,79,67,.12); border-radius: 9px; padding: 8px 10px; text-align: center; }
+    .sim-res-val { font-family: 'Barlow', sans-serif; font-size: 16px; font-weight: 600; color: var(--dk); }
+    .sim-res-lbl { font-size: 9px; color: var(--mu); margin-top: 2px; }
+
+    .highlight-box { border-radius: 9px; padding: 10px 12px; font-size: 12px; line-height: 1.65; margin-top: 10px; }
+    .highlight-box.warn { background: rgba(239,125,134,.1); border: 1px solid rgba(239,125,134,.25); color: #7a2430; }
+    .highlight-box.ok   { background: rgba(53,201,149,.1);  border: 1px solid rgba(53,201,149,.25); color: #1a6b50; }
+    .highlight-box.info { background: rgba(91,107,191,.08); border: 1px solid rgba(91,107,191,.2);  color: #3d4fa0; }
+
+    .footnote { text-align: center; font-size: 11px; color: rgba(255,255,255,.2); margin-top: 32px; font-family: 'JetBrains Mono', monospace; letter-spacing: .05em; }
+    .dash svg text { font-family: 'Inter', -apple-system, sans-serif; font-style: normal; }
+
+    @media (max-width: 1100px) {
+      .method-grid { grid-template-columns: 1fr 1fr; }
+      .dash-charts, .dash-charts.asym { grid-template-columns: 1fr; }
+      .story-flow { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 700px) {
+      body { padding: 20px 16px 60px; }
+      .dash-kpi-row { grid-template-columns: 1fr 1fr; }
+      .dash-actions { grid-template-columns: 1fr; }
+      .sim-results  { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="method-section">
+  <div class="method-label">Analysis · 4 Methodologies — German Credit Dataset · 1,000건</div>
+  <div class="method-grid">
+    <div class="method-btn active" onclick="switchPanel(0,this)">
+      <div class="mb-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="8" width="4" height="12" rx="1" fill="rgba(255,255,255,.5)"/><rect x="9" y="4" width="4" height="16" rx="1" fill="rgba(255,255,255,.5)"/><rect x="16" y="10" width="4" height="10" rx="1" fill="rgba(255,255,255,.5)"/></svg></div>
+      <div class="mb-num">01 — ANALYSIS A</div>
+      <div class="mb-title">재무 세그먼트 분석</div>
+      <div class="mb-desc">취약층(little+NA)이 아닌 중간층이 가장 큰 금액을 빌린다 — 직관과 반대</div>
+      <div class="mb-tag">Segment Profiling</div>
+    </div>
+    <div class="method-btn" onclick="switchPanel(1,this)">
+      <div class="mb-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="14" width="3" height="6" rx="1" fill="rgba(255,255,255,.35)"/><rect x="7" y="8" width="3" height="12" rx="1" fill="rgba(255,255,255,.5)"/><rect x="12" y="10" width="3" height="10" rx="1" fill="rgba(255,255,255,.5)"/><rect x="17" y="4" width="3" height="16" rx="1" fill="rgba(255,255,255,.65)"/></svg></div>
+      <div class="mb-num">02 — ANALYSIS B</div>
+      <div class="mb-title">목적별 대출 규모 분석</div>
+      <div class="mb-desc">재무 상태를 통제해도 목적 간 금액 격차 1.87배 — 목적은 독립 변수</div>
+      <div class="mb-tag">Purpose × Amount</div>
+    </div>
+    <div class="method-btn" onclick="switchPanel(2,this)">
+      <div class="mb-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="6" width="8" height="14" rx="2" stroke="rgba(255,255,255,.5)" stroke-width="1.5" fill="none"/><rect x="12" y="2" width="8" height="18" rx="2" stroke="rgba(255,255,255,.65)" stroke-width="1.5" fill="none"/><path d="M6 11h4M16 7v8" stroke="rgba(255,255,255,.4)" stroke-width="1.2" stroke-linecap="round"/></svg></div>
+      <div class="mb-num">03 — ANALYSIS C</div>
+      <div class="mb-title">주거형태 독립 예측력</div>
+      <div class="mb-desc">저축 수준 통제 후에도 free 거주자 +50.4% — 주거형태는 독립 변수</div>
+      <div class="mb-tag">Housing Effect</div>
+    </div>
+    <div class="method-btn" onclick="switchPanel(3,this)">
+      <div class="mb-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="7" cy="15" r="2" fill="rgba(255,255,255,.4)"/><circle cx="11" cy="10" r="2" fill="rgba(255,255,255,.5)"/><circle cx="15" cy="7" r="2" fill="rgba(255,255,255,.6)"/><circle cx="18" cy="4" r="2" fill="rgba(255,255,255,.7)"/><path d="M4 18 L19 3" stroke="rgba(255,255,255,.25)" stroke-width="1" stroke-dasharray="3,2"/></svg></div>
+      <div class="mb-num">04 — ANALYSIS D</div>
+      <div class="mb-title">포트폴리오 구조 전체</div>
+      <div class="mb-desc">r=0.625 금액-기간 연동 / car+radio/TV 60.1% 집중 / 요인 중요도</div>
+      <div class="mb-tag">Portfolio Overview</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+  PANEL 0 — 재무 세그먼트 분석
+═══════════════════════════════════════ -->
+<div class="dash-panel active" id="panel-0">
+<div class="dash">
+  <div class="dash-topbar">
+    <div class="dash-topbar-left">
+      <div class="dash-topbar-title">재무 세그먼트 분석 — <em>Segment Profiling · Saving × Checking</em></div>
+      <div class="dash-topbar-problem">문제: 재무취약 집단(저축 little + 당좌 NA)은 전체에서 얼마나 되며, 대출 규모는 다른 집단과 얼마나 다른가?</div>
+    </div>
+    <span class="dash-topbar-meta">german_credit_data.csv · Snapshot · 1,000건</span>
+  </div>
+  <div class="dash-body">
+
+    <div class="story-block">
+      <div class="story-flow">
+        <div class="sf-cell">
+          <div class="sf-label lbl-now">현황</div>
+          <div class="sf-val">19.1% = 191건</div>
+          <div class="sf-desc">재무취약(little+NA) 집단<br><span class="num-yel">전체 4개 세그먼트</span> 교차 분석</div>
+        </div>
+        <div class="sf-cell">
+          <div class="sf-label lbl-why">원인</div>
+          <div class="sf-val">4,213 DM</div>
+          <div class="sf-desc">moderate+moderate — 전체 최고<br>취약층(2,895)보다 <strong>+45.5%</strong> 높음</div>
+        </div>
+        <div class="sf-cell">
+          <div class="sf-label lbl-so">결과</div>
+          <div class="sf-val">가설 기각</div>
+          <div class="sf-desc"><span class="num-red">"취약층 = 고액대출"</span> 불성립<br>중간층이 포트폴리오를 주도</div>
+        </div>
+        <div class="sf-cell">
+          <div class="sf-label lbl-act">기회</div>
+          <div class="sf-val">중간층 모니터링</div>
+          <div class="sf-desc">moderate×business <span class="num-grn">n=11</span><br>고수익 우량 세그먼트 우선 추적</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">STEP 1</span><span class="dash-step-hdr-label">현황 파악 — 포트폴리오 전체 KPI</span></div>
+    <div class="dash-kpi-row">
+      <div class="dk-box">
+        <div class="dk-lbl">전체 평균 대출금액</div>
+        <div class="dk-val">3,271 DM</div>
+        <div class="dk-delta warn">중앙값 2,320 DM — 오른쪽 편향</div>
+      </div>
+      <div class="dk-box">
+        <div class="dk-lbl">재무취약 집단 비율</div>
+        <div class="dk-val">19.1%</div>
+        <div class="dk-delta warn">little+NA — 191건</div>
+      </div>
+      <div class="dk-box" style="border-color:rgba(239,125,134,.3)">
+        <div class="dk-lbl">중간층 평균 대출금액</div>
+        <div class="dk-val">4,213 DM</div>
+        <div class="dk-delta dn">moderate+moderate — 전체 +28.8%</div>
+      </div>
+      <div class="dk-box">
+        <div class="dk-lbl">고위험 복합 집단</div>
+        <div class="dk-val">75건</div>
+        <div class="dk-delta warn">little+NA+car/business — 7.5%</div>
+      </div>
+    </div>
+
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">STEP 2</span><span class="dash-step-hdr-label">원인 확인 — 세그먼트별 대출 패턴</span></div>
+    <div class="dash-charts asym">
+      <div class="chart-card primary">
+        <div class="cc-title">재무상태 세그먼트별 평균 대출금액 — 중간층(moderate+moderate)이 최고</div>
+        <div class="cc-desc">Saving × Checking account 교차 세그먼트. "취약층 = 고액" 직관이 데이터로 기각됨.</div>
+        <!-- Bar chart: 4 segments, maxVal=4213 -->
+        <svg viewBox="0 0 310 195" width="100%" height="auto">
+          <defs>
+            <linearGradient id="g-grn" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#35c995" stop-opacity=".9"/><stop offset="100%" stop-color="#35c995" stop-opacity=".5"/></linearGradient>
+            <linearGradient id="g-blu" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5b8ef0" stop-opacity=".8"/><stop offset="100%" stop-color="#5b8ef0" stop-opacity=".45"/></linearGradient>
+            <linearGradient id="g-yel" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#efb05d" stop-opacity=".85"/><stop offset="100%" stop-color="#efb05d" stop-opacity=".5"/></linearGradient>
+          </defs>
+          <!-- grid lines -->
+          <line x1="42" y1="10" x2="42" y2="155" stroke="rgba(96,79,67,.15)" stroke-width="1"/>
+          <line x1="42" y1="155" x2="298" y2="155" stroke="rgba(96,79,67,.15)" stroke-width="1"/>
+          <line x1="42" y1="55"  x2="298" y2="55"  stroke="rgba(96,79,67,.06)" stroke-dasharray="3,3"/>
+          <line x1="42" y1="105" x2="298" y2="105" stroke="rgba(96,79,67,.06)" stroke-dasharray="3,3"/>
+          <!-- y-axis labels -->
+          <text x="38" y="14"  text-anchor="end" font-size="9" fill="#9a9086">4,213</text>
+          <text x="38" y="59"  text-anchor="end" font-size="9" fill="#9a9086">3,000</text>
+          <text x="38" y="109" text-anchor="end" font-size="9" fill="#9a9086">1,500</text>
+          <!-- bar 1: moderate+moderate 4213 h=140 y=15 -->
+          <rect x="52"  y="15"  width="45" height="140" fill="url(#g-grn)" rx="4"/>
+          <text x="74"  y="11"  text-anchor="middle" font-size="10" fill="#218d72" font-weight="700">4,213</text>
+          <!-- bar 2: little+little 3208 h=107 y=48 -->
+          <rect x="117" y="48"  width="45" height="107" fill="url(#g-blu)" rx="4"/>
+          <text x="139" y="44"  text-anchor="middle" font-size="10" fill="#3b5bbf" font-weight="700">3,208</text>
+          <!-- bar 3: little+NA 2895 h=96 y=59 -->
+          <rect x="182" y="59"  width="45" height="96"  fill="url(#g-yel)" rx="4"/>
+          <text x="204" y="55"  text-anchor="middle" font-size="10" fill="#a0620a" font-weight="700">2,895</text>
+          <!-- bar 4: rich+rich 798 h=26 y=129 (n=3, reference) -->
+          <rect x="247" y="129" width="45" height="26"  fill="rgba(96,79,67,.2)" rx="4"/>
+          <text x="269" y="125" text-anchor="middle" font-size="9" fill="#9a9086">798*</text>
+          <!-- x labels -->
+          <text x="74"  y="168" text-anchor="middle" font-size="9" fill="#2f2b27" font-weight="600">moderate</text>
+          <text x="74"  y="179" text-anchor="middle" font-size="9" fill="#9a9086">+moderate</text>
+          <text x="139" y="168" text-anchor="middle" font-size="9" fill="#2f2b27" font-weight="600">little</text>
+          <text x="139" y="179" text-anchor="middle" font-size="9" fill="#9a9086">+little</text>
+          <text x="204" y="168" text-anchor="middle" font-size="9" fill="#2f2b27" font-weight="600">little</text>
+          <text x="204" y="179" text-anchor="middle" font-size="9" fill="#9a9086">+NA</text>
+          <text x="269" y="168" text-anchor="middle" font-size="9" fill="#9a9086">rich</text>
+          <text x="269" y="179" text-anchor="middle" font-size="9" fill="#9a9086">+rich*</text>
+          <!-- n labels -->
+          <text x="74"  y="190" text-anchor="middle" font-size="8" fill="#9a9086">n=47</text>
+          <text x="139" y="190" text-anchor="middle" font-size="8" fill="#9a9086">n=219</text>
+          <text x="204" y="190" text-anchor="middle" font-size="8" fill="#9a9086">n=191</text>
+          <text x="269" y="190" text-anchor="middle" font-size="8" fill="#9a9086">n=3*</text>
+        </svg>
+        <div class="highlight-box info" style="margin-top:8px">*rich+rich n=3 — 통계적 신뢰성 없음, 참고값</div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-title">세그먼트별 평균 대출기간 — 금액과 기간이 함께 높아진다</div>
+        <div class="cc-desc">moderate+moderate 27.7개월, little+NA 18.8개월 — 금액과 기간 동반 패턴 확인.</div>
+        <!-- Duration bar chart, maxVal=27.7 -->
+        <svg viewBox="0 0 230 195" width="100%" height="auto">
+          <!-- grid -->
+          <line x1="32" y1="10" x2="32" y2="155" stroke="rgba(96,79,67,.15)" stroke-width="1"/>
+          <line x1="32" y1="155" x2="218" y2="155" stroke="rgba(96,79,67,.15)" stroke-width="1"/>
+          <line x1="32" y1="55"  x2="218" y2="55"  stroke="rgba(96,79,67,.06)" stroke-dasharray="3,3"/>
+          <line x1="32" y1="105" x2="218" y2="105" stroke="rgba(96,79,67,.06)" stroke-dasharray="3,3"/>
+          <text x="28" y="14"  text-anchor="end" font-size="9" fill="#9a9086">28</text>
+          <text x="28" y="59"  text-anchor="end" font-size="9" fill="#9a9086">20</text>
+          <text x="28" y="109" text-anchor="end" font-size="9" fill="#9a9086">10</text>
+          <!-- mod+mod 27.7 h=140 y=15 -->
+          <rect x="40"  y="15"  width="36" height="140" fill="url(#g-grn)" rx="4"/>
+          <text x="58"  y="11"  text-anchor="middle" font-size="9" fill="#218d72" font-weight="700">27.7mo</text>
+          <!-- lit+lit 21.8 h=110 y=45 -->
+          <rect x="90"  y="45"  width="36" height="110" fill="url(#g-blu)" rx="4"/>
+          <text x="108" y="41"  text-anchor="middle" font-size="9" fill="#3b5bbf" font-weight="700">21.8mo</text>
+          <!-- lit+NA 18.8 h=95 y=60 -->
+          <rect x="140" y="60"  width="36" height="95"  fill="url(#g-yel)" rx="4"/>
+          <text x="158" y="56"  text-anchor="middle" font-size="9" fill="#a0620a" font-weight="700">18.8mo</text>
+          <!-- rich+rich 14 h=71 y=84 -->
+          <rect x="190" y="84"  width="36" height="71"  fill="rgba(96,79,67,.18)" rx="4"/>
+          <text x="208" y="80"  text-anchor="middle" font-size="9" fill="#9a9086">14mo*</text>
+          <!-- x labels -->
+          <text x="58"  y="168" text-anchor="middle" font-size="9" fill="#9a9086">mod+mod</text>
+          <text x="108" y="168" text-anchor="middle" font-size="9" fill="#9a9086">lit+lit</text>
+          <text x="158" y="168" text-anchor="middle" font-size="9" fill="#9a9086">lit+NA</text>
+          <text x="208" y="168" text-anchor="middle" font-size="9" fill="#9a9086">rich*</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Full width: segment comparison table -->
+    <div class="dash-charts full">
+      <div class="chart-card">
+        <div class="cc-title">세그먼트 프로파일 매트릭스 — 재무상태가 대출 규모를 결정하는 방향이 예상과 반대</div>
+        <div class="cc-desc">moderate+moderate가 전체 평균 +28.8%로 최고, little+NA는 전체 평균 -11.5%로 예상보다 낮음. 목적 구성(moderate는 car 38%·business 23%)이 높은 평균을 유도.</div>
+        <svg viewBox="0 0 600 130" width="100%" height="auto">
+          <!-- header -->
+          <rect x="0" y="0" width="600" height="22" fill="rgba(47,43,39,.07)" rx="4"/>
+          <text x="80"  y="15" text-anchor="middle" font-size="10" fill="#2f2b27" font-weight="700">세그먼트</text>
+          <text x="200" y="15" text-anchor="middle" font-size="10" fill="#2f2b27" font-weight="700">건수(n)</text>
+          <text x="290" y="15" text-anchor="middle" font-size="10" fill="#2f2b27" font-weight="700">평균 금액</text>
+          <text x="380" y="15" text-anchor="middle" font-size="10" fill="#2f2b27" font-weight="700">전체 대비</text>
+          <text x="480" y="15" text-anchor="middle" font-size="10" fill="#2f2b27" font-weight="700">평균 기간</text>
+          <!-- row 1: moderate+moderate -->
+          <rect x="0" y="23" width="600" height="22" fill="rgba(53,201,149,.06)"/>
+          <text x="80"  y="38" text-anchor="middle" font-size="10" fill="#2f2b27">moderate + moderate</text>
+          <text x="200" y="38" text-anchor="middle" font-size="10" fill="#2f2b27">47건</text>
+          <text x="290" y="38" text-anchor="middle" font-size="10" fill="#218d72" font-weight="700">4,213 DM</text>
+          <text x="380" y="38" text-anchor="middle" font-size="10" fill="#218d72" font-weight="700">+28.8%</text>
+          <text x="480" y="38" text-anchor="middle" font-size="10" fill="#2f2b27">27.7개월</text>
+          <!-- row 2: little+little -->
+          <text x="80"  y="60" text-anchor="middle" font-size="10" fill="#2f2b27">little + little</text>
+          <text x="200" y="60" text-anchor="middle" font-size="10" fill="#2f2b27">219건</text>
+          <text x="290" y="60" text-anchor="middle" font-size="10" fill="#3b5bbf" font-weight="600">3,208 DM</text>
+          <text x="380" y="60" text-anchor="middle" font-size="10" fill="#9a9086">-1.9%</text>
+          <text x="480" y="60" text-anchor="middle" font-size="10" fill="#2f2b27">21.8개월</text>
+          <!-- row 3: little+NA -->
+          <rect x="0" y="67" width="600" height="22" fill="rgba(239,176,93,.05)"/>
+          <text x="80"  y="82" text-anchor="middle" font-size="10" fill="#2f2b27">little + NA</text>
+          <text x="200" y="82" text-anchor="middle" font-size="10" fill="#2f2b27">191건</text>
+          <text x="290" y="82" text-anchor="middle" font-size="10" fill="#a0620a" font-weight="600">2,895 DM</text>
+          <text x="380" y="82" text-anchor="middle" font-size="10" fill="#9b2d38">-11.5%</text>
+          <text x="480" y="82" text-anchor="middle" font-size="10" fill="#2f2b27">18.8개월</text>
+          <!-- row 4: rich+rich -->
+          <text x="80"  y="104" text-anchor="middle" font-size="10" fill="#9a9086">rich + rich *</text>
+          <text x="200" y="104" text-anchor="middle" font-size="10" fill="#9a9086">3건*</text>
+          <text x="290" y="104" text-anchor="middle" font-size="10" fill="#9a9086">798 DM</text>
+          <text x="380" y="104" text-anchor="middle" font-size="10" fill="#9a9086">-75.6%</text>
+          <text x="480" y="104" text-anchor="middle" font-size="10" fill="#9a9086">14개월</text>
+          <!-- separator lines -->
+          <line x1="0" y1="22" x2="600" y2="22" stroke="rgba(96,79,67,.1)" stroke-width="1"/>
+          <line x1="0" y1="45" x2="600" y2="45" stroke="rgba(96,79,67,.06)" stroke-width="1"/>
+          <line x1="0" y1="67" x2="600" y2="67" stroke="rgba(96,79,67,.06)" stroke-width="1"/>
+          <line x1="0" y1="89" x2="600" y2="89" stroke="rgba(96,79,67,.06)" stroke-width="1"/>
+          <line x1="0" y1="111" x2="600" y2="111" stroke="rgba(96,79,67,.06)" stroke-width="1"/>
+          <text x="300" y="125" text-anchor="middle" font-size="9" fill="#9a9086">* rich+rich n=3 — 통계적 신뢰성 없음</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">STEP 3</span><span class="dash-step-hdr-label">세그먼트 프로파일 인터랙티브</span></div>
+    <div class="sim-widget">
+      <div class="sim-title">세그먼트별 대출 프로파일 <span class="sim-badge">인터랙티브</span></div>
+      <div class="sim-note">재무 프로파일 세그먼트를 선택하면 평균 대출금액·기간·규모가 표시됩니다.</div>
+      <div class="sim-scenario-row">
+        <div class="sim-scenario-btn active" onclick="selectSegScenario(this,'little-na')">little + NA<br><span style="font-size:10px;font-weight:400;color:var(--mu)">재무취약 추정</span></div>
+        <div class="sim-scenario-btn" onclick="selectSegScenario(this,'little-little')">little + little<br><span style="font-size:10px;font-weight:400;color:var(--mu)">소액저축+소액당좌</span></div>
+        <div class="sim-scenario-btn" onclick="selectSegScenario(this,'mod-mod')">moderate + moderate<br><span style="font-size:10px;font-weight:400;color:var(--mu)">재무 중간층</span></div>
+      </div>
+      <div class="sim-results">
+        <div class="sim-res"><div class="sim-res-val" id="seg-r1">2,895 DM</div><div class="sim-res-lbl">평균 대출금액</div></div>
+        <div class="sim-res"><div class="sim-res-val" id="seg-r2">18.8개월</div><div class="sim-res-lbl">평균 대출기간</div></div>
+        <div class="sim-res"><div class="sim-res-val" id="seg-r3">191건</div><div class="sim-res-lbl">세그먼트 규모</div></div>
+      </div>
+    </div>
+
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">ACTION</span><span class="dash-step-hdr-label">즉각 실행 가능한 개선 과제</span></div>
+    <div class="dash-actions">
+      <div class="da-item"><div class="da-p">P1 — 즉시</div><div class="da-title">주거형태를 심사 독립 변수로 공식 포함</div><div class="da-why">동일 저축 조건(little)에서 free vs own 50.4% 금액 격차 확인 → 주거형태만으로 별도 심사 트리거 설정</div></div>
+      <div class="da-item"><div class="da-p">P2 — 2~4주 내</div><div class="da-title">목적별 대출 한도 상한 재검토</div><div class="da-why">domestic(1,498 DM) vs vacation(8,209 DM) 5.5배 격차의 합리성 검증 — vacation n=12 확대 후 재분석 필요</div></div>
+      <div class="da-item"><div class="da-p">P3 — 모니터링</div><div class="da-title">moderate+moderate 그룹 분기별 추이</div><div class="da-why">기준값: 4,213 DM / 주기: 분기별. car 38%·business 23% 목적 집중이 유지되면 포트폴리오 집중 리스크 경보</div></div>
+    </div>
+
+  </div>
+</div>
+</div><!-- /panel-0 -->
+
+
+<!-- ═══════════════════════════════════════
+  PANEL 1 — 목적별 대출 규모 분석
+═══════════════════════════════════════ -->
+<div class="dash-panel" id="panel-1">
+<div class="dash">
+  <div class="dash-topbar">
+    <div class="dash-topbar-left">
+      <div class="dash-topbar-title">목적별 대출 규모 — <em>Purpose × Amount · Controlled Comparison</em></div>
+      <div class="dash-topbar-problem">문제: 대출 목적은 재무 상태(Saving accounts)를 통제한 후에도 대출금액을 유의미하게 설명하는가?</div>
+    </div>
+    <span class="dash-topbar-meta">german_credit_data.csv · Snapshot · 1,000건</span>
+  </div>
+  <div class="dash-body">
+
+    <div class="story-block">
+      <div class="story-flow">
+        <div class="sf-cell">
+          <div class="sf-label lbl-now">현황</div>
+          <div class="sf-val">5.5배 스프레드</div>
+          <div class="sf-desc">vacation 8,209 DM<br>~ domestic <span class="num-red">1,498 DM</span></div>
+        </div>
+        <div class="sf-cell">
+          <div class="sf-label lbl-why">원인</div>
+          <div class="sf-val">1.87배 유지</div>
+          <div class="sf-desc">Saving=little 통제 후<br>business <strong>4,399</strong> vs radio/TV <strong>2,351</strong></div>
+        </div>
+        <div class="sf-cell">
+          <div class="sf-label lbl-so">결과</div>
+          <div class="sf-val">목적 = 독립 변수</div>
+          <div class="sf-desc">재무상태와 <span class="num-yel">무관하게</span><br>목적 자체가 금액 결정</div>
+        </div>
+        <div class="sf-cell">
+          <div class="sf-label lbl-act">기회</div>
+          <div class="sf-val">목적별 한도 차등화</div>
+          <div class="sf-desc">재무상태만 기준 → 부족<br><span class="num-grn">목적 기반 정책 별도 유효</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">STEP 1</span><span class="dash-step-hdr-label">현황 KPI — 목적별 금액 구조</span></div>
+    <div class="dash-kpi-row">
+      <div class="dk-box">
+        <div class="dk-lbl">목적 금액 스프레드</div>
+        <div class="dk-val">5.5배</div>
+        <div class="dk-delta warn">vacation 8,209 ~ domestic 1,498 DM</div>
+      </div>
+      <div class="dk-box" style="border-color:rgba(239,125,134,.3)">
+        <div class="dk-lbl">car+radio/TV 집중도</div>
+        <div class="dk-val">60.1%</div>
+        <div class="dk-delta dn">금액 기준 / 건수 61.7%</div>
+      </div>
+      <div class="dk-box">
+        <div class="dk-lbl">business (Saving=little 내)</div>
+        <div class="dk-val">4,399 DM</div>
+        <div class="dk-delta up">n=56 / 저축통제 비교</div>
+      </div>
+      <div class="dk-box">
+        <div class="dk-lbl">radio/TV (Saving=little 내)</div>
+        <div class="dk-val">2,351 DM</div>
+        <div class="dk-delta warn">n=169 / business 대비 -46.6%</div>
+      </div>
+    </div>
+
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">STEP 2</span><span class="dash-step-hdr-label">원인 확인 — 목적별 금액 분포 및 통제 비교</span></div>
+    <div class="dash-charts asym">
+      <div class="chart-card primary">
+        <div class="cc-title">목적별 평균 대출금액 — business 4,158 DM, radio/TV 2,488 DM (전체 기준)</div>
+        <div class="cc-desc">vacation/others(n=12)·domestic(n=12)는 참고값. business·car·radio/TV 비교가 핵심.</div>
+        <!-- Horizontal bar chart: 8 purposes, maxVal=8209 -->
+        <svg viewBox="0 0 370 230" width="100%" height="auto">
+          <!-- vacation: ref, dashed, w=200 -->
+          <rect x="150" y="10"  width="200" height="14" fill="rgba(239,176,93,.3)" rx="3" stroke="rgba(239,176,93,.5)" stroke-width="1" stroke-dasharray="3,2"/>
+          <text x="145" y="21"  text-anchor="end" font-size="9" fill="#9a9086">vacation*</text>
+          <text x="354" y="21"  font-size="9" fill="#9a9086">8,209</text>
+          <!-- business: 4158/8209*200=101 -->
+          <rect x="150" y="32"  width="101" height="14" fill="rgba(53,201,149,.7)" rx="3"/>
+          <text x="145" y="43"  text-anchor="end" font-size="9" fill="#2f2b27" font-weight="600">business</text>
+          <text x="255" y="43"  font-size="9" fill="#218d72" font-weight="700">4,158</text>
+          <!-- car: 3768/8209*200=92 -->
+          <rect x="150" y="54"  width="92"  height="14" fill="rgba(91,142,240,.65)" rx="3"/>
+          <text x="145" y="65"  text-anchor="end" font-size="9" fill="#2f2b27" font-weight="600">car</text>
+          <text x="246" y="65"  font-size="9" fill="#3b5bbf" font-weight="700">3,768</text>
+          <!-- furniture: 3067/8209*200=75 -->
+          <rect x="150" y="76"  width="75"  height="14" fill="rgba(91,142,240,.5)" rx="3"/>
+          <text x="145" y="87"  text-anchor="end" font-size="9" fill="#2f2b27">furniture</text>
+          <text x="229" y="87"  font-size="9" fill="#9a9086">3,067</text>
+          <!-- education: 2879/8209*200=70 -->
+          <rect x="150" y="98"  width="70"  height="14" fill="rgba(91,142,240,.42)" rx="3"/>
+          <text x="145" y="109" text-anchor="end" font-size="9" fill="#2f2b27">education</text>
+          <text x="224" y="109" font-size="9" fill="#9a9086">2,879</text>
+          <!-- repairs: 2728/8209*200=66 -->
+          <rect x="150" y="120" width="66"  height="14" fill="rgba(91,142,240,.35)" rx="3"/>
+          <text x="145" y="131" text-anchor="end" font-size="9" fill="#2f2b27">repairs</text>
+          <text x="220" y="131" font-size="9" fill="#9a9086">2,728</text>
+          <!-- radio/TV: 2488/8209*200=61 -->
+          <rect x="150" y="142" width="61"  height="14" fill="rgba(91,142,240,.28)" rx="3"/>
+          <text x="145" y="153" text-anchor="end" font-size="9" fill="#2f2b27" font-weight="600">radio/TV</text>
+          <text x="215" y="153" font-size="9" fill="#9a9086">2,488</text>
+          <!-- domestic: ref, dashed, w=37 -->
+          <rect x="150" y="164" width="37"  height="14" fill="rgba(239,125,134,.3)" rx="3" stroke="rgba(239,125,134,.4)" stroke-width="1" stroke-dasharray="3,2"/>
+          <text x="145" y="175" text-anchor="end" font-size="9" fill="#9a9086">domestic*</text>
+          <text x="191" y="175" font-size="9" fill="#9a9086">1,498</text>
+          <!-- axis -->
+          <line x1="150" y1="8" x2="150" y2="185" stroke="rgba(96,79,67,.2)" stroke-width="1"/>
+          <text x="150" y="198" text-anchor="middle" font-size="8" fill="#9a9086">0</text>
+          <text x="250" y="198" text-anchor="middle" font-size="8" fill="#9a9086">4,105</text>
+          <text x="350" y="198" text-anchor="middle" font-size="8" fill="#9a9086">8,209 DM</text>
+          <text x="260" y="212" text-anchor="middle" font-size="8" fill="#9a9086">* n=12 — 표본 소량, 참고값만</text>
+        </svg>
+      </div>
+      <div class="chart-card">
+        <div class="cc-title">Saving=little 통제 후 — business vs radio/TV 1.87배 격차 유지</div>
+        <div class="cc-desc">재무상태를 고정해도 목적이 금액을 독립적으로 설명함. 성공 기준(±20%) 충족.</div>
+        <!-- Controlled comparison: business vs radio/TV within Saving=little -->
+        <svg viewBox="0 0 220 190" width="100%" height="auto">
+          <defs>
+            <linearGradient id="g-grn2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#35c995" stop-opacity=".9"/><stop offset="100%" stop-color="#35c995" stop-opacity=".5"/></linearGradient>
+            <linearGradient id="g-blu2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5b8ef0" stop-opacity=".8"/><stop offset="100%" stop-color="#5b8ef0" stop-opacity=".45"/></linearGradient>
+          </defs>
+          <line x1="30" y1="10"  x2="30"  y2="150" stroke="rgba(96,79,67,.15)" stroke-width="1"/>
+          <line x1="30" y1="150" x2="200" y2="150" stroke="rgba(96,79,67,.15)" stroke-width="1"/>
+          <line x1="30" y1="70"  x2="200" y2="70"  stroke="rgba(96,79,67,.07)" stroke-dasharray="3,3"/>
+          <text x="26" y="14"  text-anchor="end" font-size="9" fill="#9a9086">4,399</text>
+          <text x="26" y="74"  text-anchor="end" font-size="9" fill="#9a9086">2,351</text>
+          <!-- business 4399: h=100 baseline=150 -->
+          <rect x="48"  y="50"  width="58" height="100" fill="url(#g-grn2)" rx="4"/>
+          <text x="77"  y="45"  text-anchor="middle" font-size="10" fill="#218d72" font-weight="700">4,399 DM</text>
+          <!-- radio/TV 2351: h=53 -->
+          <rect x="122" y="97"  width="58" height="53"  fill="url(#g-blu2)" rx="4"/>
+          <text x="151" y="93"  text-anchor="middle" font-size="10" fill="#3b5bbf" font-weight="700">2,351 DM</text>
+          <!-- gap annotation -->
+          <line x1="77" y1="50" x2="151" y2="97" stroke="rgba(96,79,67,.2)" stroke-width="1" stroke-dasharray="3,2"/>
+          <text x="114" y="67"  text-anchor="middle" font-size="9" fill="#a0620a" font-weight="700">× 1.87</text>
+          <!-- x labels -->
+          <text x="77"  y="163" text-anchor="middle" font-size="9" fill="#2f2b27" font-weight="600">business</text>
+          <text x="77"  y="174" text-anchor="middle" font-size="9" fill="#9a9086">n=56</text>
+          <text x="151" y="163" text-anchor="middle" font-size="9" fill="#2f2b27" font-weight="600">radio/TV</text>
+          <text x="151" y="174" text-anchor="middle" font-size="9" fill="#9a9086">n=169</text>
+          <text x="114" y="188" text-anchor="middle" font-size="8" fill="#9a9086">Saving=little 내 비교</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">STEP 3</span><span class="dash-step-hdr-label">목적별 대출 프로파일 시뮬레이터</span></div>
+    <div class="sim-widget">
+      <div class="sim-title">목적별 대출 프로파일 <span class="sim-badge">인터랙티브</span></div>
+      <div class="sim-note">대출 목적을 선택하면 평균 금액·기간·건수를 확인합니다. (전체 1,000건 기준)</div>
+      <div class="sim-scenario-row">
+        <div class="sim-scenario-btn active" onclick="selectPurposeScenario(this,'car')">car<br><span style="font-size:10px;font-weight:400;color:var(--mu)">33.7% — 최대 목적</span></div>
+        <div class="sim-scenario-btn" onclick="selectPurposeScenario(this,'business')">business<br><span style="font-size:10px;font-weight:400;color:var(--mu)">9.7% — 고액 목적</span></div>
+        <div class="sim-scenario-btn" onclick="selectPurposeScenario(this,'radio')">radio/TV<br><span style="font-size:10px;font-weight:400;color:var(--mu)">28.0% — 소액 목적</span></div>
+      </div>
+      <div class="sim-results">
+        <div class="sim-res"><div class="sim-res-val" id="pur-r1">3,768 DM</div><div class="sim-res-lbl">평균 대출금액</div></div>
+        <div class="sim-res"><div class="sim-res-val" id="pur-r2">20.8개월</div><div class="sim-res-lbl">평균 대출기간</div></div>
+        <div class="sim-res"><div class="sim-res-val" id="pur-r3">337건</div><div class="sim-res-lbl">건수</div></div>
+      </div>
+    </div>
+
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">ACTION</span><span class="dash-step-hdr-label">목적 기반 정책 권고</span></div>
+    <div class="dash-actions">
+      <div class="da-item"><div class="da-p">P1 — 즉시</div><div class="da-title">목적을 심사 독립 변수로 공식화</div><div class="da-why">재무상태 통제 후에도 목적별 1.87배 격차 확인 → 목적별 LTV 기준 차등화 즉시 적용 가능</div></div>
+      <div class="da-item"><div class="da-p">P2 — 2~4주 내</div><div class="da-title">vacation/others 표본 확대 후 재분석</div><div class="da-why">vacation n=12로 8,209 DM 평균은 이상치 민감. 표본 30건 이상 확보 후 정책 결정 필요</div></div>
+      <div class="da-item"><div class="da-p">P3 — 모니터링</div><div class="da-title">car+radio/TV 집중도 60% 임계값</div><div class="da-why">현재 60.1%. 포트폴리오 다양성 목표로 60% 초과 시 → 비주류 목적 인센티브 정책 검토</div></div>
+    </div>
+
+  </div>
+</div>
+</div><!-- /panel-1 -->
+
+
+<!-- ═══════════════════════════════════════
+  PANEL 2 — 주거형태 독립 예측력
+═══════════════════════════════════════ -->
+<div class="dash-panel" id="panel-2">
+<div class="dash">
+  <div class="dash-topbar">
+    <div class="dash-topbar-left">
+      <div class="dash-topbar-title">주거형태 독립 예측력 — <em>Housing Effect · Savings-Controlled Comparison</em></div>
+      <div class="dash-topbar-problem">문제: 주거형태(free)는 고액 대출의 독립 예측 변수인가, 아니면 저축 부족의 단순 반영인가?</div>
+    </div>
+    <span class="dash-topbar-meta">german_credit_data.csv · Snapshot · 1,000건</span>
+  </div>
+  <div class="dash-body">
+
+    <div class="story-block">
+      <div class="story-flow">
+        <div class="sf-cell">
+          <div class="sf-label lbl-now">현황</div>
+          <div class="sf-val">4,906 DM</div>
+          <div class="sf-desc">free 거주자 평균<br>자가(3,061) 대비 <span class="num-red">+60.3%</span></div>
+        </div>
+        <div class="sf-cell">
+          <div class="sf-label lbl-why">원인</div>
+          <div class="sf-val">+50.4% 유지</div>
+          <div class="sf-desc">Saving=little 통제 후<br>free <strong>4,545</strong> vs own <strong>3,021</strong></div>
+        </div>
+        <div class="sf-cell">
+          <div class="sf-label lbl-so">결과</div>
+          <div class="sf-val">독립 예측력 확인</div>
+          <div class="sf-desc">저축 분포 거의 동일<br><span class="num-yel">free 62% little</span> vs own 60.3%</div>
+        </div>
+        <div class="sf-cell">
+          <div class="sf-label lbl-act">기회</div>
+          <div class="sf-val">심사 변수 추가</div>
+          <div class="sf-desc">주거형태 독립 <span class="num-grn">스코어링 변수</span><br>별도 심사 트리거 설정 가능</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">STEP 1</span><span class="dash-step-hdr-label">현황 KPI — 주거형태별 대출 구조</span></div>
+    <div class="dash-kpi-row">
+      <div class="dk-box" style="border-color:rgba(239,125,134,.3)">
+        <div class="dk-lbl">free 거주자 평균 대출</div>
+        <div class="dk-val">4,906 DM</div>
+        <div class="dk-delta dn">자가(3,061) 대비 +60.3%</div>
+      </div>
+      <div class="dk-box">
+        <div class="dk-lbl">저축 통제 후 격차</div>
+        <div class="dk-val">+50.4%</div>
+        <div class="dk-delta warn">free+little(4,545) vs own+little(3,021)</div>
+      </div>
+      <div class="dk-box">
+        <div class="dk-lbl">free 월 상환부담</div>
+        <div class="dk-val">192.6 DM</div>
+        <div class="dk-delta warn">own(162.3) 대비 +18.7% / 최고</div>
+      </div>
+      <div class="dk-box">
+        <div class="dk-lbl">free 거주자 비율</div>
+        <div class="dk-val">10.8%</div>
+        <div class="dk-delta warn">108건 / 소수지만 고액 패턴</div>
+      </div>
+    </div>
+
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">STEP 2</span><span class="dash-step-hdr-label">원인 확인 — 주거형태별 비교 및 저축 통제 결과</span></div>
+    <div class="dash-charts asym">
+      <div class="chart-card primary">
+        <div class="cc-title">주거형태별 평균 대출금액 및 월 상환부담 — free가 모든 지표에서 최고</div>
+        <div class="cc-desc">free 4,906 DM vs rent 3,123 DM vs own 3,061 DM. 월 상환부담도 free(192.6) > rent(174.2) > own(162.3).</div>
+        <svg viewBox="0 0 300 210" width="100%" height="auto">
+          <defs>
+            <linearGradient id="g-red" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ef7d86" stop-opacity=".85"/><stop offset="100%" stop-color="#ef7d86" stop-opacity=".5"/></linearGradient>
+            <linearGradient id="g-yel2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#efb05d" stop-opacity=".8"/><stop offset="100%" stop-color="#efb05d" stop-opacity=".45"/></linearGradient>
+          </defs>
+          <line x1="35" y1="10"  x2="35"  y2="155" stroke="rgba(96,79,67,.15)" stroke-width="1"/>
+          <line x1="35" y1="155" x2="285" y2="155" stroke="rgba(96,79,67,.15)" stroke-width="1"/>
+          <line x1="35" y1="60"  x2="285" y2="60"  stroke="rgba(96,79,67,.06)" stroke-dasharray="3,3"/>
+          <line x1="35" y1="110" x2="285" y2="110" stroke="rgba(96,79,67,.06)" stroke-dasharray="3,3"/>
+          <text x="31" y="14"  text-anchor="end" font-size="9" fill="#9a9086">4,906</text>
+          <text x="31" y="64"  text-anchor="end" font-size="9" fill="#9a9086">3,200</text>
+          <text x="31" y="114" text-anchor="end" font-size="9" fill="#9a9086">1,600</text>
+          <!-- free: h=130, y=25 -->
+          <rect x="48"  y="25"  width="60" height="130" fill="url(#g-red)" rx="4"/>
+          <text x="78"  y="21"  text-anchor="middle" font-size="10" fill="#9b2d38" font-weight="700">4,906</text>
+          <!-- rent: 3123/4906*130=83, y=72 -->
+          <rect x="123" y="72"  width="60" height="83"  fill="url(#g-yel2)" rx="4"/>
+          <text x="153" y="68"  text-anchor="middle" font-size="10" fill="#a0620a" font-weight="700">3,123</text>
+          <!-- own: 3061/4906*130=81, y=74 -->
+          <rect x="198" y="74"  width="60" height="81"  fill="url(#g-blu)" rx="4"/>
+          <text x="228" y="70"  text-anchor="middle" font-size="10" fill="#3b5bbf" font-weight="700">3,061</text>
+          <!-- monthly burden mini bars -->
+          <rect x="48"  y="159" width="60" height="10" fill="rgba(239,125,134,.4)" rx="2"/>
+          <text x="78"  y="168" text-anchor="middle" font-size="8" fill="#9b2d38" font-weight="700">192.6/월</text>
+          <rect x="123" y="159" width="54" height="10" fill="rgba(239,176,93,.4)"  rx="2"/>
+          <text x="153" y="168" text-anchor="middle" font-size="8" fill="#a0620a">174.2/월</text>
+          <rect x="198" y="159" width="50" height="10" fill="rgba(91,142,240,.4)"  rx="2"/>
+          <text x="228" y="168" text-anchor="middle" font-size="8" fill="#3b5bbf">162.3/월</text>
+          <!-- x labels -->
+          <text x="78"  y="183" text-anchor="middle" font-size="9" fill="#2f2b27" font-weight="600">free</text>
+          <text x="78"  y="193" text-anchor="middle" font-size="9" fill="#9a9086">n=108</text>
+          <text x="153" y="183" text-anchor="middle" font-size="9" fill="#2f2b27" font-weight="600">rent</text>
+          <text x="153" y="193" text-anchor="middle" font-size="9" fill="#9a9086">n=179</text>
+          <text x="228" y="183" text-anchor="middle" font-size="9" fill="#2f2b27" font-weight="600">own</text>
+          <text x="228" y="193" text-anchor="middle" font-size="9" fill="#9a9086">n=713</text>
+        </svg>
+      </div>
+      <div class="chart-card">
+        <div class="cc-title">저축 통제 후 비교 — free+little vs own+little (+50.4%)</div>
+        <div class="cc-desc">Saving=little 고정 시 free(n=67) vs own(n=430). 저축 구성 차이가 아닌 주거형태 자체 효과.</div>
+        <svg viewBox="0 0 220 200" width="100%" height="auto">
+          <line x1="30" y1="10"  x2="30"  y2="155" stroke="rgba(96,79,67,.15)" stroke-width="1"/>
+          <line x1="30" y1="155" x2="200" y2="155" stroke="rgba(96,79,67,.15)" stroke-width="1"/>
+          <line x1="30" y1="88"  x2="200" y2="88"  stroke="rgba(96,79,67,.07)" stroke-dasharray="3,3"/>
+          <text x="26" y="14"  text-anchor="end" font-size="9" fill="#9a9086">4,545</text>
+          <text x="26" y="92"  text-anchor="end" font-size="9" fill="#9a9086">3,021</text>
+          <!-- free+little: h=100, y=55 -->
+          <rect x="45"  y="55"  width="62" height="100" fill="url(#g-red)" rx="4"/>
+          <text x="76"  y="51"  text-anchor="middle" font-size="10" fill="#9b2d38" font-weight="700">4,545</text>
+          <!-- own+little: 3021/4545*100=66, y=89 -->
+          <rect x="123" y="89"  width="62" height="66"  fill="url(#g-blu2)" rx="4"/>
+          <text x="154" y="85"  text-anchor="middle" font-size="10" fill="#3b5bbf" font-weight="700">3,021</text>
+          <!-- gap annotation -->
+          <path d="M107 55 L107 89" stroke="rgba(239,125,134,.6)" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arr)"/>
+          <text x="107" y="74"  text-anchor="middle" font-size="10" fill="#9b2d38" font-weight="700">+50.4%</text>
+          <!-- x labels -->
+          <text x="76"  y="168" text-anchor="middle" font-size="9" fill="#2f2b27" font-weight="600">free + little</text>
+          <text x="76"  y="179" text-anchor="middle" font-size="9" fill="#9a9086">n=67</text>
+          <text x="154" y="168" text-anchor="middle" font-size="9" fill="#2f2b27" font-weight="600">own + little</text>
+          <text x="154" y="179" text-anchor="middle" font-size="9" fill="#9a9086">n=430</text>
+          <text x="115" y="195" text-anchor="middle" font-size="8" fill="#9a9086">Saving=little 통제 후 비교</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">STEP 3</span><span class="dash-step-hdr-label">주거형태별 대출 프로파일 시뮬레이터</span></div>
+    <div class="sim-widget">
+      <div class="sim-title">주거형태별 대출 프로파일 <span class="sim-badge">인터랙티브</span></div>
+      <div class="sim-note">주거형태를 선택하면 평균 대출금액·월 상환부담·건수를 확인합니다. (전체 1,000건 기준)</div>
+      <div class="sim-scenario-row">
+        <div class="sim-scenario-btn active" onclick="selectHousingScenario(this,'free')">free 거주<br><span style="font-size:10px;font-weight:400;color:var(--mu)">10.8% — 타인 공간</span></div>
+        <div class="sim-scenario-btn" onclick="selectHousingScenario(this,'rent')">rent 임차<br><span style="font-size:10px;font-weight:400;color:var(--mu)">17.9% — 임차</span></div>
+        <div class="sim-scenario-btn" onclick="selectHousingScenario(this,'own')">own 자가<br><span style="font-size:10px;font-weight:400;color:var(--mu)">71.3% — 자가 소유</span></div>
+      </div>
+      <div class="sim-results">
+        <div class="sim-res"><div class="sim-res-val" id="hsg-r1">4,906 DM</div><div class="sim-res-lbl">평균 대출금액</div></div>
+        <div class="sim-res"><div class="sim-res-val" id="hsg-r2">192.6 DM/월</div><div class="sim-res-lbl">월 상환부담 추정</div></div>
+        <div class="sim-res"><div class="sim-res-val" id="hsg-r3">108건</div><div class="sim-res-lbl">건수</div></div>
+      </div>
+    </div>
+
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">ACTION</span><span class="dash-step-hdr-label">주거형태 기반 정책 권고</span></div>
+    <div class="dash-actions">
+      <div class="da-item"><div class="da-p">P1 — 즉시</div><div class="da-title">주거형태를 심사 독립 변수로 공식 포함</div><div class="da-why">저축 통제 후에도 50.4% 격차 확인. free 거주를 "고가 자산 없음 + 주거 불안정" 복합 신호로 처리 → 별도 심사 트리거</div></div>
+      <div class="da-item"><div class="da-p">P2 — 2~4주 내</div><div class="da-title">free+목적 조합 세부 분석</div><div class="da-why">free 거주자의 목적 분포 확인 필요 (car/business 비중이 높으면 목적이 부분 설명) → n=108 세부 교차 분석</div></div>
+      <div class="da-item"><div class="da-p">P3 — 모니터링</div><div class="da-title">free 거주자 월 상환부담 임계값</div><div class="da-why">현재 192.6 DM/월. 200 DM 초과 시 → free 거주자 대출 한도 검토 및 상환 이력 데이터 연동 필요</div></div>
+    </div>
+
+  </div>
+</div>
+</div><!-- /panel-2 -->
+
+
+<!-- ═══════════════════════════════════════
+  PANEL 3 — 포트폴리오 전체 구조
+═══════════════════════════════════════ -->
+<div class="dash-panel" id="panel-3">
+<div class="dash">
+  <div class="dash-topbar">
+    <div class="dash-topbar-left">
+      <div class="dash-topbar-title">포트폴리오 전체 구조 — <em>Correlation · Pareto · Factor Importance</em></div>
+      <div class="dash-topbar-problem">문제: 대출 규모를 결정하는 핵심 요인은 재무취약성인가, 대출 목적인가, 주거형태인가?</div>
+    </div>
+    <span class="dash-topbar-meta">german_credit_data.csv · Snapshot · 1,000건</span>
+  </div>
+  <div class="dash-body">
+
+    <div class="story-block">
+      <div class="story-flow">
+        <div class="sf-cell">
+          <div class="sf-label lbl-now">현황</div>
+          <div class="sf-val">3,271,258 DM</div>
+          <div class="sf-desc">1,000건 전체 대출 총액<br>평균 3,271 DM / 기간 20.9mo</div>
+        </div>
+        <div class="sf-cell">
+          <div class="sf-label lbl-why">원인</div>
+          <div class="sf-val">r = 0.625</div>
+          <div class="sf-desc">금액-기간 강한 상관<br>목적·주거형태 <strong>독립 설명</strong></div>
+        </div>
+        <div class="sf-cell">
+          <div class="sf-label lbl-so">결과</div>
+          <div class="sf-val">60.1% 편중</div>
+          <div class="sf-desc">car+radio/TV <span class="num-yel">2개 목적</span><br>고액대출 18.8% 존재</div>
+        </div>
+        <div class="sf-cell">
+          <div class="sf-label lbl-act">기회</div>
+          <div class="sf-val">목적×주거 심사</div>
+          <div class="sf-desc">재무취약성보다 <span class="num-grn">조합 변수</span><br>기반 심사가 더 정확</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">STEP 1</span><span class="dash-step-hdr-label">현황 KPI — 포트폴리오 구조</span></div>
+    <div class="dash-kpi-row">
+      <div class="dk-box" style="border-color:rgba(53,201,149,.3)">
+        <div class="dk-lbl">Duration-Credit 상관계수</div>
+        <div class="dk-val">r = 0.625</div>
+        <div class="dk-delta up">유일한 강한 수치 상관</div>
+      </div>
+      <div class="dk-box" style="border-color:rgba(239,125,134,.3)">
+        <div class="dk-lbl">car+radio/TV 집중도</div>
+        <div class="dk-val">60.1%</div>
+        <div class="dk-delta dn">금액 기준 / 건수 61.7%</div>
+      </div>
+      <div class="dk-box">
+        <div class="dk-lbl">장기대출 비율</div>
+        <div class="dk-val">23.0%</div>
+        <div class="dk-delta warn">Duration &gt; 24개월 — 230건</div>
+      </div>
+      <div class="dk-box">
+        <div class="dk-lbl">고액대출 비율</div>
+        <div class="dk-val">18.8%</div>
+        <div class="dk-delta warn">Credit &gt; 5,000 DM — 188건</div>
+      </div>
+    </div>
+
+    <!-- Full width: Scatter plot Duration × Credit -->
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">STEP 2</span><span class="dash-step-hdr-label">원인 확인 — Duration × Credit 강상관 구조</span></div>
+    <div class="dash-charts full">
+      <div class="chart-card primary">
+        <div class="cc-title">Duration × Credit Amount 상관 (r=0.625) — 목적별 군집 레이블</div>
+        <div class="cc-desc">금액이 클수록 기간도 길어지는 구조. vacation·business가 고액-장기, radio/TV·domestic이 소액-단기 구간에 집중.</div>
+        <svg viewBox="0 0 580 210" width="100%" height="auto">
+          <!-- axes -->
+          <line x1="55" y1="10"  x2="55"  y2="175" stroke="rgba(96,79,67,.2)" stroke-width="1"/>
+          <line x1="55" y1="175" x2="555" y2="175" stroke="rgba(96,79,67,.2)" stroke-width="1"/>
+          <!-- grid -->
+          <line x1="55" y1="60"  x2="555" y2="60"  stroke="rgba(96,79,67,.06)" stroke-dasharray="4,3"/>
+          <line x1="55" y1="110" x2="555" y2="110" stroke="rgba(96,79,67,.06)" stroke-dasharray="4,3"/>
+          <line x1="55" y1="140" x2="555" y2="140" stroke="rgba(96,79,67,.06)" stroke-dasharray="4,3"/>
+          <!-- y axis labels -->
+          <text x="51" y="14"  text-anchor="end" font-size="9" fill="#9a9086">18K</text>
+          <text x="51" y="64"  text-anchor="end" font-size="9" fill="#9a9086">10K</text>
+          <text x="51" y="114" text-anchor="end" font-size="9" fill="#9a9086">5K</text>
+          <text x="51" y="144" text-anchor="end" font-size="9" fill="#9a9086">3K</text>
+          <text x="51" y="175" text-anchor="end" font-size="9" fill="#9a9086">0</text>
+          <!-- x axis labels -->
+          <text x="55"  y="188" text-anchor="middle" font-size="9" fill="#9a9086">4mo</text>
+          <text x="183" y="188" text-anchor="middle" font-size="9" fill="#9a9086">20mo</text>
+          <text x="295" y="188" text-anchor="middle" font-size="9" fill="#9a9086">34mo</text>
+          <text x="420" y="188" text-anchor="middle" font-size="9" fill="#9a9086">50mo</text>
+          <text x="555" y="188" text-anchor="middle" font-size="9" fill="#9a9086">72mo</text>
+          <!-- Trend line: r=0.625, from (4mo,1500) to (72mo,9500) -->
+          <!-- x(d)=55+(d-4)*500/68; y(c)=175-c*165/18000 -->
+          <!-- trend: (55,161) → (555,88) -->
+          <line x1="55" y1="161" x2="555" y2="88" stroke="rgba(79,183,153,.4)" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <!-- scatter cloud: background dots -->
+          <circle cx="75"  cy="170" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="82"  cy="166" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="92"  cy="164" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="102" cy="162" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="110" cy="160" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="118" cy="163" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="130" cy="157" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="140" cy="159" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="148" cy="153" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="160" cy="155" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="172" cy="150" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="178" cy="145" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="190" cy="143" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="200" cy="139" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="205" cy="133" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="225" cy="138" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="240" cy="130" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="260" cy="125" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="280" cy="122" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="295" cy="118" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="310" cy="129" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="330" cy="115" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="355" cy="108" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="380" cy="100" r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="400" cy="95"  r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="430" cy="88"  r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="460" cy="82"  r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="490" cy="70"  r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="520" cy="58"  r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="540" cy="42"  r="2.5" fill="rgba(96,79,67,.2)"/>
+          <circle cx="555" cy="18"  r="2.5" fill="rgba(96,79,67,.2)"/>
+          <!-- Purpose group centroids (labeled) -->
+          <!-- domestic: d=16.8,c=1498 → x=179,y=161 -->
+          <circle cx="179" cy="161" r="6" fill="rgba(239,125,134,.7)" stroke="#fff" stroke-width="1.5"/>
+          <text x="179" cy="150" dy="-9" text-anchor="middle" font-size="8.5" fill="#9b2d38" font-weight="700">domestic</text>
+          <!-- radio/TV: d=20,c=2488 → x=176+... let me recalc: x=55+(20-4)*500/68=173,y=175-2488*165/18000=152 -->
+          <circle cx="173" cy="152" r="7" fill="rgba(91,142,240,.6)" stroke="#fff" stroke-width="1.5"/>
+          <text x="196" y="148" font-size="8.5" fill="#3b5bbf" font-weight="700">radio/TV</text>
+          <!-- car: d=20.8,c=3768 → x=55+(20.8-4)*500/68=178,y=175-3768*165/18000=141 -->
+          <circle cx="178" cy="141" r="9" fill="rgba(91,142,240,.7)" stroke="#fff" stroke-width="1.5"/>
+          <text x="178" y="130" text-anchor="middle" font-size="8.5" fill="#3b5bbf" font-weight="700">car</text>
+          <!-- business: d=26.9,c=4158 → x=55+(22.9/68)*500=223,y=175-4158*165/18000=137 -->
+          <circle cx="223" cy="137" r="7" fill="rgba(53,201,149,.75)" stroke="#fff" stroke-width="1.5"/>
+          <text x="223" y="127" text-anchor="middle" font-size="8.5" fill="#218d72" font-weight="700">business</text>
+          <!-- vacation: d=32.3,c=8209 → x=55+(28.3/68)*500=263,y=175-8209*165/18000=100 -->
+          <circle cx="263" cy="100" r="6" fill="rgba(239,176,93,.8)" stroke="#fff" stroke-width="1.5"/>
+          <text x="263" y="90" text-anchor="middle" font-size="8.5" fill="#a0620a" font-weight="700">vacation*</text>
+          <!-- r annotation -->
+          <rect x="460" y="15" width="90" height="28" rx="6" fill="rgba(79,183,153,.12)" stroke="rgba(79,183,153,.3)" stroke-width="1"/>
+          <text x="505" y="27" text-anchor="middle" font-size="9" fill="#218d72" font-weight="700">r = 0.625</text>
+          <text x="505" y="38" text-anchor="middle" font-size="8" fill="#218d72">강한 양의 상관</text>
+          <!-- axis labels -->
+          <text x="305" y="202" text-anchor="middle" font-size="9" fill="#9a9086">대출기간 (개월)</text>
+          <text x="16"  y="95" text-anchor="middle" font-size="9" fill="#9a9086" transform="rotate(-90,16,95)">대출금액 (DM)</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Factor importance + Pareto -->
+    <div class="dash-charts">
+      <div class="chart-card">
+        <div class="cc-title">대출금액 결정 요인 상대적 효과 크기 — 목적 &gt; 주거형태 &gt; 재무상태 &gt; 나이</div>
+        <div class="cc-desc">각 요인의 최대-최소 평균 금액 격차 기준. 인과관계 아님 — 상관 기반 효과 추정.</div>
+        <svg viewBox="0 0 340 175" width="100%" height="auto">
+          <line x1="155" y1="8"  x2="155" y2="155" stroke="rgba(96,79,67,.2)" stroke-width="1"/>
+          <line x1="155" y1="155" x2="330" y2="155" stroke="rgba(96,79,67,.1)" stroke-width="1"/>
+          <!-- Purpose: range 6711 DM → bar=155px (max) -->
+          <rect x="157" y="20"  width="155" height="16" fill="rgba(53,201,149,.65)" rx="3"/>
+          <text x="317" y="32"  font-size="9" fill="#218d72" font-weight="700"> +6,711 DM</text>
+          <text x="151" y="32"  text-anchor="end" font-size="9" fill="#2f2b27" font-weight="600">대출 목적</text>
+          <!-- Housing: range 1845 DM → 155*(1845/6711)=43px -->
+          <rect x="157" y="48"  width="43"  height="16" fill="rgba(239,125,134,.6)" rx="3"/>
+          <text x="204" y="60"  font-size="9" fill="#9b2d38" font-weight="700"> +1,845 DM</text>
+          <text x="151" y="60"  text-anchor="end" font-size="9" fill="#2f2b27" font-weight="600">주거형태</text>
+          <!-- Savings: range 1334 DM → 155*(1334/6711)=31px -->
+          <rect x="157" y="76"  width="31"  height="16" fill="rgba(239,176,93,.65)" rx="3"/>
+          <text x="192" y="88"  font-size="9" fill="#a0620a" font-weight="700"> +1,334 DM</text>
+          <text x="151" y="88"  text-anchor="end" font-size="9" fill="#2f2b27" font-weight="600">재무상태</text>
+          <!-- Age: r=0.033 → near zero, 5px -->
+          <rect x="157" y="104" width="5"   height="16" fill="rgba(96,79,67,.25)" rx="3"/>
+          <text x="167" y="116" font-size="9" fill="#9a9086"> ≈ 0 (r=0.033)</text>
+          <text x="151" y="116" text-anchor="end" font-size="9" fill="#9a9086">나이</text>
+          <!-- baseline label -->
+          <text x="157" y="145" text-anchor="middle" font-size="8" fill="#9a9086">기준(0)</text>
+          <text x="240" y="145" text-anchor="middle" font-size="8" fill="#218d72">격차 →</text>
+          <text x="170" y="165" font-size="8" fill="#9a9086">* 각 요인 최대-최소 평균 금액 차이 / 인과 아님</text>
+        </svg>
+      </div>
+      <div class="chart-card">
+        <div class="cc-title">목적별 포트폴리오 금액 비중 — car+radio/TV가 전체의 60.1%</div>
+        <div class="cc-desc">건수 기준 61.7%, 금액 기준 60.1%. 2개 목적에 포트폴리오가 집중된 구조.</div>
+        <svg viewBox="0 0 280 175" width="100%" height="auto">
+          <!-- Simple stacked / waterfall bar representation -->
+          <!-- Total = 3,271,258 DM = 100% -->
+          <!-- car: 38.8% -->
+          <rect x="40" y="15"  width="200" height="22" fill="rgba(91,142,240,.7)" rx="3"/>
+          <text x="145" y="30" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">car — 38.8%</text>
+          <!-- radio/TV: 21.3% → width=200*0.213/0.388... let me use ratio -->
+          <!-- Actually use separate bars with proportional heights for pareto -->
+          <!-- car: 200*(38.8/38.8)=200 → shown above -->
+          <!-- radio/TV: 200*(21.3/38.8)=110 -->
+          <rect x="40" y="45"  width="110" height="22" fill="rgba(91,142,240,.5)" rx="3"/>
+          <text x="95"  y="60" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">radio/TV — 21.3%</text>
+          <!-- furniture: 200*(17.0/38.8)=88 -->
+          <rect x="40" y="75"  width="88"  height="22" fill="rgba(91,142,240,.38)" rx="3"/>
+          <text x="84"  y="90" text-anchor="middle" font-size="9" fill="#3b5bbf" font-weight="700">furniture — 17.0%</text>
+          <!-- business: 200*(12.3/38.8)=63 -->
+          <rect x="40" y="105" width="63"  height="22" fill="rgba(53,201,149,.55)" rx="3"/>
+          <text x="72"  y="120" text-anchor="middle" font-size="9" fill="#218d72" font-weight="700">business — 12.3%</text>
+          <!-- others: remaining 10.6% -->
+          <rect x="40" y="135" width="55"  height="22" fill="rgba(96,79,67,.18)" rx="3"/>
+          <text x="67"  y="150" text-anchor="middle" font-size="9" fill="#9a9086">기타 — 10.6%</text>
+          <!-- cumulative line: car+radio = 60.1% -->
+          <line x1="40" y1="67" x2="145" y2="67" stroke="rgba(239,125,134,.7)" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <text x="148" y="64" font-size="8" fill="#9b2d38" font-weight="700">60.1% ↑</text>
+          <text x="148" y="74" font-size="8" fill="#9b2d38">car+radio/TV</text>
+          <line x1="40" y1="8" x2="40" y2="160" stroke="rgba(96,79,67,.15)" stroke-width="1"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">STEP 3</span><span class="dash-step-hdr-label">조합 시나리오 — 주거형태 × 목적 추정</span></div>
+    <div class="sim-widget">
+      <div class="sim-title">주거형태 × 목적 조합 예측 <span class="sim-badge">방향성 추정</span></div>
+      <div class="sim-note">분석에서 확인된 두 독립 효과(주거형태·목적)를 조합한 방향성 추정값입니다. 실제 교차 표본 분석 필요.</div>
+      <div class="sim-scenario-row">
+        <div class="sim-scenario-btn active" onclick="selectComboScenario(this,'free-biz')">free + business<br><span style="font-size:10px;font-weight:400;color:var(--mu)">고위험 고액 조합</span></div>
+        <div class="sim-scenario-btn" onclick="selectComboScenario(this,'own-biz')">own + business<br><span style="font-size:10px;font-weight:400;color:var(--mu)">중간 금액 조합</span></div>
+        <div class="sim-scenario-btn" onclick="selectComboScenario(this,'own-radio')">own + radio/TV<br><span style="font-size:10px;font-weight:400;color:var(--mu)">소액 안정 조합</span></div>
+      </div>
+      <div class="sim-results">
+        <div class="sim-res"><div class="sim-res-val" id="cmb-r1">약 6,200 DM</div><div class="sim-res-lbl">추정 평균 대출금액</div></div>
+        <div class="sim-res"><div class="sim-res-val" id="cmb-r2">약 27개월</div><div class="sim-res-lbl">추정 평균 기간</div></div>
+        <div class="sim-res"><div class="sim-res-val" id="cmb-r3">방향성 추정</div><div class="sim-res-lbl">신뢰도</div></div>
+      </div>
+    </div>
+
+    <div class="dash-step-hdr"><span class="dash-step-hdr-num">ACTION</span><span class="dash-step-hdr-label">포트폴리오 구조 개선 과제</span></div>
+    <div class="dash-actions">
+      <div class="da-item"><div class="da-p">P1 — 즉시</div><div class="da-title">목적×주거형태 복합 심사 기준 도입</div><div class="da-why">두 변수가 독립적으로 금액을 설명 → 재무상태 단독 심사보다 목적+주거형태 조합 기준이 더 정확한 리스크 분류 가능</div></div>
+      <div class="da-item"><div class="da-p">P2 — 2~4주 내</div><div class="da-title">car+radio/TV 60% 집중도 분산 검토</div><div class="da-why">2개 목적에 60% 편중은 포트폴리오 다양성 리스크. 30% 초과 단일 목적 집중도 임계값 설정 → 목적별 인센티브 차등화</div></div>
+      <div class="da-item"><div class="da-p">P3 — 모니터링</div><div class="da-title">소득·고용 데이터 추가 시 재분석</div><div class="da-why">현 분석은 상관관계. 소득·직업·금리·상환이력 추가 시 인과관계 검증 및 실제 리스크 수준 측정 가능</div></div>
+    </div>
+
+  </div>
+</div>
+</div><!-- /panel-3 -->
+
+
+<p class="footnote">AI Data Analysis Pipeline · @dashboard agent output · runs/latest/outputs/06_dashboard.html · German Credit Dataset · 1,000건</p>
+
+
+<script>
+  function switchPanel(idx, btn) {
+    document.querySelectorAll('.method-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+    document.querySelectorAll('.dash-panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function selectSegScenario(btn, seg) {
+    btn.closest('.sim-widget').querySelectorAll('.sim-scenario-btn').forEach(b => b.classList.toggle('active', b === btn));
+    const data = {
+      'little-na':     ['2,895 DM', '18.8개월', '191건'],
+      'little-little': ['3,208 DM', '21.8개월', '219건'],
+      'mod-mod':       ['4,213 DM', '27.7개월', '47건']
+    };
+    const d = data[seg];
+    document.getElementById('seg-r1').textContent = d[0];
+    document.getElementById('seg-r2').textContent = d[1];
+    document.getElementById('seg-r3').textContent = d[2];
+  }
+
+  function selectPurposeScenario(btn, p) {
+    btn.closest('.sim-widget').querySelectorAll('.sim-scenario-btn').forEach(b => b.classList.toggle('active', b === btn));
+    const data = {
+      'car':     ['3,768 DM', '20.8개월', '337건'],
+      'business':['4,158 DM', '26.9개월', '97건'],
+      'radio':   ['2,488 DM', '20.0개월', '280건']
+    };
+    const d = data[p];
+    document.getElementById('pur-r1').textContent = d[0];
+    document.getElementById('pur-r2').textContent = d[1];
+    document.getElementById('pur-r3').textContent = d[2];
+  }
+
+  function selectHousingScenario(btn, h) {
+    btn.closest('.sim-widget').querySelectorAll('.sim-scenario-btn').forEach(b => b.classList.toggle('active', b === btn));
+    const data = {
+      'free': ['4,906 DM', '192.6 DM/월', '108건'],
+      'rent': ['3,123 DM', '174.2 DM/월', '179건'],
+      'own':  ['3,061 DM', '162.3 DM/월', '713건']
+    };
+    const d = data[h];
+    document.getElementById('hsg-r1').textContent = d[0];
+    document.getElementById('hsg-r2').textContent = d[1];
+    document.getElementById('hsg-r3').textContent = d[2];
+  }
+
+  function selectComboScenario(btn, combo) {
+    btn.closest('.sim-widget').querySelectorAll('.sim-scenario-btn').forEach(b => b.classList.toggle('active', b === btn));
+    const data = {
+      'free-biz':  ['약 6,200 DM', '약 27개월', '방향성 추정'],
+      'own-biz':   ['약 3,900 DM', '약 25개월', '방향성 추정'],
+      'own-radio': ['약 2,300 DM', '약 19개월', '방향성 추정']
+    };
+    const d = data[combo];
+    document.getElementById('cmb-r1').textContent = d[0];
+    document.getElementById('cmb-r2').textContent = d[1];
+    document.getElementById('cmb-r3').textContent = d[2];
+  }
+</script>
+
+</body>
+</html>
